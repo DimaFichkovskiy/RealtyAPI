@@ -1,0 +1,32 @@
+version: "3.8"
+
+services:
+  app:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "8000:8000"
+    depends_on:
+      - database
+    env_file:
+      - .env
+    volumes:
+      - ./app:/project/app
+      - ./alembic:/project/alembic
+      - ./alembic.ini:/project/alembic.ini
+      - ./downloaded-files:/project/downloaded-files
+
+  database:
+    image: "postgres:latest"
+    restart: always
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgres-data/:/var/lib/postgresql/data/
+    env_file:
+      - .env
+
+volumes:
+  postgres-data:
