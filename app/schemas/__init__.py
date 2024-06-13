@@ -1,1 +1,1 @@
-from .realty import Realty
+from .realty import Realty, Categories, Category

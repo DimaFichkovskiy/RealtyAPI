@@ -1,10 +1,14 @@
 import os
+
 from fastapi import APIRouter, status, File, Depends, UploadFile
 from fastapi_pagination import Page, paginate
 
 from app.crud import RealtyCRUD
 from app import schemas
 
+from fastapi_pagination.utils import disable_installed_extensions_check
+
+disable_installed_extensions_check()
 
 router = APIRouter(
     prefix="/realty",
@@ -13,32 +17,55 @@ router = APIRouter(
 )
 
 
+@router.get("/categories", response_model=schemas.Categories, status_code=status.HTTP_200_OK)
+async def categories(
+        realty_crud: RealtyCRUD = Depends()
+):
+    # all_categories = await realty_crud.get_all_categories()
+    # all_categories_dict = {"categories": all_categories}
+    all_categories_dict = {"categories": [
+        {"name_en": "apartment", "name_urk": "Квартири"},
+        {"name_en": "commercial", "name_urk": "Кормерція"},
+        {"name_en": "house", "name_urk": "Приватні будинки"},
+        {"name_en": "land", "name_urk": "Земельні ділянки"},
+        {"name_en": "secondary", "name_urk": "Вторинка"},
+        {"name_en": "town", "name_urk": "Котеджні містечка"}
+    ]}
+    return all_categories_dict
+
+
 @router.get("/realties", response_model=Page[schemas.Realty], status_code=status.HTTP_200_OK)
 async def get_all_realties(
-    skip: int = 0,
-    limit: int = 10,
-    realty_crud: RealtyCRUD = Depends()
+        realty_crud: RealtyCRUD = Depends()
+) -> Page[schemas.Realty]:
+    realties = await realty_crud.get_all_realties()
+    return paginate(realties)
+
+
+@router.get("/search", response_model=Page[schemas.Realty], status_code=status.HTTP_200_OK)
+async def search_by_keywords(
+        query: str = "",
+        realty_crud: RealtyCRUD = Depends()
 ):
-    realties = await realty_crud.get_all_realties(skip=skip, limit=limit)
+    realties = await realty_crud.get_realties_by_keyword(query=query)
     return paginate(realties)
 
 
 @router.get("/{realty_type}", response_model=Page[schemas.Realty], status_code=status.HTTP_200_OK)
 async def get_realty_by_type(
         realty_type: str,
-        skip: int = 0,
-        limit: int = 10,
         realty_crud: RealtyCRUD = Depends()
 ):
-    realties = await realty_crud.get_realties_by_type(realty_type=realty_type, skip=skip, limit=limit)
+    realties = await realty_crud.get_realties_by_type(realty_type=realty_type)
     return paginate(realties)
 
 
-@router.get("/{realty_id}", response_model=schemas.Realty)
+@router.get("/object/{realty_id}", response_model=schemas.Realty, status_code=status.HTTP_200_OK)
 async def get_realty_by_realty_id(
         realty_id: int,
         realty_crud: RealtyCRUD = Depends(),
 ):
+    print(realty_id)
     realty = await realty_crud.get_realty_by_realty_id(realty_id=realty_id)
     return realty
 
@@ -53,3 +80,6 @@ async def upload_file(
         buffer.write(await file.read())
     await realty_crud.upload_file(path_to_file=f"{path_to_directory_with_downloaded_files + file.filename}")
     return 200
+
+
+

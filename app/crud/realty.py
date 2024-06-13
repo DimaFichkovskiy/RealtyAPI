@@ -1,9 +1,10 @@
 import ast
 import pandas as pd
+import pprint
 
 from typing import List
 from fastapi import Depends, HTTPException
-from sqlalchemy import select
+from sqlalchemy import select, distinct
 
 from app.db import AsyncSession, get_db_session
 from app import models
@@ -13,35 +14,43 @@ class RealtyCRUD:
     def __init__(self, db: AsyncSession = Depends(get_db_session)):
         self.db: AsyncSession = db
 
-    async def get_all_realties(self, skip: int = 0, limit: int = 10) -> List[models.Realty]:
-        result = await self.db.execute(select(models.Realty).offset(skip).limit(limit))
+    async def get_all_categories(self):
+        result = await self.db.execute(select(distinct(getattr(models.Realty, "realty_type"))))
         result = result.scalars().all()
-        # pprint.pprint(dict(result[0]))
+        pprint.pprint(result)
+        return result
+
+    async def get_all_realties(self) -> List[models.Realty]:
+        result = await self.db.execute(select(models.Realty))
+        result = result.scalars().all()
         return result
 
     async def get_realty_by_realty_id(self, realty_id: int) -> models.Realty:
         result = await self.db.execute(select(models.Realty).filter(models.Realty.realty_id == realty_id))
         result = result.scalars().first()
+        pprint.pprint(result)
 
         if result is None:
             raise HTTPException(status_code=404, detail="Not Found")
 
         return result
 
-    async def get_realties_by_type(
-            self,
-            realty_type: str,
-            skip: int = 0,
-            limit: int = 10
-    ) -> List[models.Realty]:
+    async def get_realties_by_type(self, realty_type: str) -> List[models.Realty]:
         result = await self.db.execute(select(models.Realty).filter(
             models.Realty.realty_type == realty_type
-        ).offset(skip).limit(limit))
+        ))
         result = result.scalars().all()
 
         if result is None:
             raise HTTPException(status_code=404, detail="Not Found")
 
+        return result
+
+    async def get_realties_by_keyword(self, query: str) -> List[models.Realty]:
+        result = await self.db.execute(select(models.Realty).filter(
+            models.Realty.title.contains(query)
+        ))
+        result = result.scalars().all()
         return result
 
     async def add_realty_images(self, realty: models.Realty, images: list):

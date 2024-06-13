@@ -18,14 +18,16 @@ async def lifespan(app: FastAPI):
     await db.disconnect()
 
 app = FastAPI(lifespan=lifespan)
-add_pagination(app)
 
 app.include_router(routers.realty_router)
+
+add_pagination(app)
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:8000"
+        "http://localhost:8000",
+        "http://localhost:3000"
     ],
     allow_credentials=True,
     allow_methods=["*"],

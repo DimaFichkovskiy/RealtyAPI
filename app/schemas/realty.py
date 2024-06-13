@@ -48,3 +48,16 @@ class Realty(BaseModel):
     seller_phone_number: Optional[str] = None
     seller_photo: Optional[str] = None
     realty_images: List[Image]
+
+
+class Category(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    name_en: str
+    name_urk: str
+
+
+class Categories(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    categories: List[Category]
